@@ -4,21 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>動画リネームツール</title>
-<link rel="icon" href="./favicon.png?v=2" type="image/png">
-
 <style>
     body { font-family: "Helvetica Neue", Arial, sans-serif; background: #fff5f5; color: #333; margin: 0; padding: 20px; }
     .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid #ef5350; }
     
     /* テーマカラー: 柔らかい赤 (#ef5350 / #d32f2f) */
     h1 { margin-top: 0; color: #d32f2f; margin-bottom: 5px; }
-    /* 説明文エリア */
     .desc { color: #555; margin-bottom: 25px; font-size: 0.9em; background: #ffebee; padding: 15px; border-radius: 6px; line-height: 1.6; border-left: 5px solid #ef5350; }
 
     /* ステップ */
     .step-section { margin-bottom: 25px; padding: 20px; border: 1px solid #ffcdd2; border-radius: 8px; background: #fff; }
     .step-header { font-weight: bold; font-size: 1.1em; margin-bottom: 15px; display: flex; align-items: center; color: #c62828; }
-    /* 丸数字 */
     .step-num { 
         background: #ef5350; color: white; width: 28px; height: 28px; border-radius: 50%; 
         display: inline-flex; justify-content: center; align-items: center; margin-right: 10px; 
@@ -32,32 +28,30 @@
     /* ファイルリストテーブル */
     .file-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
     .file-table th { background: #ffebee; padding: 10px; text-align: left; font-size: 0.9em; color: #c62828; border-bottom: 2px solid #ffcdd2; }
-    .file-table td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .file-table td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
     .file-table tr:last-child td { border-bottom: none; }
-
-    /* サムネイル */
-    .thumb-img { width: 80px; height: 45px; object-fit: cover; border-radius: 4px; background: #000; border: 1px solid #ccc; }
     
     /* 入力欄 */
-    .name-input { width: 95%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
-    .orig-name { font-size: 0.85em; color: #777; display: block; margin-bottom: 4px; }
+    .name-input-group { display: flex; align-items: center; }
+    .name-input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; width: 100%; box-sizing: border-box; }
+    .name-input:focus { border-color: #ef5350; outline: none; background: #fffdfd; }
+    .ext-label { color: #888; font-size: 0.9em; margin-left: 5px; white-space: nowrap; }
+    
+    .orig-name { font-size: 0.9em; color: #666; }
 
     /* ボタン共通 */
     .action-area { margin-top: 30px; text-align: center; border-top: 2px solid #ffcdd2; padding-top: 20px; }
     button { cursor: pointer; transition: 0.3s; font-size: 1em; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; }
     
-    /* 適用ボタン (緑) */
-    .btn-apply { background: #28a745; color: white; box-shadow: 0 2px 5px rgba(40, 167, 69, 0.2); }
-    .btn-apply:hover { background: #218838; }
+    .btn-apply { background: #ef5350; color: white; box-shadow: 0 2px 5px rgba(239, 83, 80, 0.2); }
+    .btn-apply:hover { background: #d32f2f; }
 
-    /* フォルダ選択ボタン (未選択時はグレー、完了時は緑) */
     #btn-dir { background: #6c757d; color: white; padding: 12px 30px; font-size: 1.1em; border-radius: 30px; }
     #btn-dir:hover { background: #5a6268; }
     #btn-dir.ready { background: #28a745; }
 
-    /* 実行ボタン (メインの緑ボタン) */
     #btn-run { 
-        background: #28a745; /* 緑色 */
+        background: #28a745; 
         color: white; 
         padding: 15px 60px; 
         font-size: 1.2em; 
@@ -66,15 +60,13 @@
         margin-top: 20px;
     }
     #btn-run:hover { 
-        background: #1e7e34; /* 濃い緑 */
+        background: #1e7e34; 
         transform: translateY(-2px); 
     }
     #btn-run:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
 
     #status-msg { margin-top: 15px; font-weight: bold; color: #28a745; min-height: 1.2em; }
-    
-    /* 隠し要素 */
-    .hidden { display: none; }
+    .note { font-size: 0.8em; color: #666; margin-left: 5px; }
 </style>
 </head>
 <body>
@@ -82,8 +74,8 @@
 <div class="container">
     <h1>動画リネームツール</h1>
     <p class="desc">
-        動画ファイルを一括選択し、名前を変更できます。統一の命名規則付与も可能です。<br>
-        <strong>※最大50〜100個程度推奨</strong>
+        動画ファイルを一括選択し、名前を変更してコピー保存します。<br>
+        拡張子（.mp4等）は自動で維持されるため、ファイル名のみ入力してください。
     </p>
 
     <div class="step-section">
@@ -97,25 +89,26 @@
         
         <div class="batch-area">
             <span style="font-weight:bold; font-size:0.9em; color:#c62828;">一括設定:</span>
-            <input type="text" id="batch-name" placeholder="共通の名前 (例: 渋谷店)">
+            <input type="text" id="batch-name" placeholder="共通の文字 (例: 渋谷店_)">
             <select id="batch-type" style="padding:8px; border-radius:4px; border:1px solid #ccc;">
-                <option value="keep">＋ 元の名前</option>
+                <option value="prefix_only">＋ 自分で入力 (接頭辞のみ入力)</option>
                 <option value="number">＋ 連番 (01, 02...)</option>
+                <option value="keep">＋ 元の名前</option>
             </select>
             <button class="btn-apply" id="btn-batch-apply">適用する</button>
+            <span class="note">※下のリストに一括入力されます</span>
         </div>
 
         <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ffcdd2; border-radius: 4px;">
             <table class="file-table">
                 <thead>
                     <tr>
-                        <th style="width: 100px;">サムネイル</th>
-                        <th style="width: 35%;">元の名前</th>
-                        <th>変更後の名前 (編集可)</th>
+                        <th style="width: 40%;">元のファイル名</th>
+                        <th>変更後の名前 (拡張子は自動付与)</th>
                     </tr>
                 </thead>
                 <tbody id="file-list-body">
-                    <tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">動画を選択してください</td></tr>
+                    <tr><td colspan="2" style="text-align:center; color:#999; padding:20px;">動画を選択してください</td></tr>
                 </tbody>
             </table>
         </div>
@@ -130,9 +123,6 @@
     </div>
 </div>
 
-<video id="hidden-video" class="hidden" muted playsinline></video>
-<canvas id="hidden-canvas" class="hidden"></canvas>
-
 <script>
     // Elements
     const inpFiles = document.getElementById('inp-files');
@@ -146,40 +136,44 @@
     const folderStatus = document.getElementById('folder-status');
     const statusMsg = document.getElementById('status-msg');
     
-    // Thumbnail Generation Elements
-    const hiddenVideo = document.getElementById('hidden-video');
-    const hiddenCanvas = document.getElementById('hidden-canvas');
-    const ctx = hiddenCanvas.getContext('2d');
-
     // Data
-    let filesData = []; // { file, origName, newName, id }
+    let filesData = []; // { file, origBase, ext, newName, id }
     let targetDirHandle = null;
 
     // 1. ファイル選択
-    inpFiles.addEventListener('change', async (e) => {
+    inpFiles.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
         filesData = [];
-        fileListBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">読み込み中...</td></tr>';
-        
-        // ファイルデータを構築
+        // 名前を分解して保存
         for (let i = 0; i < files.length; i++) {
+            const f = files[i];
+            // 拡張子とベース名に分離
+            const lastDotIdx = f.name.lastIndexOf('.');
+            let base = f.name;
+            let ext = "";
+            if (lastDotIdx > 0) {
+                base = f.name.substring(0, lastDotIdx);
+                ext = f.name.substring(lastDotIdx); // .mp4 など
+            }
+
             filesData.push({
                 id: i,
-                file: files[i],
-                origName: files[i].name,
-                newName: files[i].name // 初期値は元の名前
+                file: f,
+                origBase: base,
+                ext: ext,
+                newName: "" // 初期値は空欄
             });
         }
         
         countInfo.innerText = `${files.length} 個の動画を選択中`;
-        await renderList();
+        renderList();
         checkReady();
     });
 
-    // リスト描画 & サムネイル生成
-    async function renderList() {
+    // リスト描画 (サムネイルなし・拡張子分離)
+    function renderList() {
         fileListBody.innerHTML = "";
 
         for (let i = 0; i < filesData.length; i++) {
@@ -187,64 +181,38 @@
             
             const tr = document.createElement('tr');
             
-            // 1. サムネイルセル
-            const tdThumb = document.createElement('td');
-            const img = document.createElement('img');
-            img.className = 'thumb-img';
-            img.src = ""; // 後でセット
-            // サムネイル非同期生成
-            generateThumbnail(item.file).then(url => img.src = url);
-            tdThumb.appendChild(img);
-
-            // 2. 元の名前セル
+            // 1. 元の名前セル
             const tdOrig = document.createElement('td');
-            tdOrig.innerHTML = `<span class="orig-name">${item.origName}</span>`;
+            tdOrig.innerHTML = `<span class="orig-name">${item.origBase}${item.ext}</span>`;
 
-            // 3. 変更後の名前セル
+            // 2. 変更後の名前セル
             const tdNew = document.createElement('td');
+            const group = document.createElement('div');
+            group.className = 'name-input-group';
+
             const input = document.createElement('input');
             input.type = "text";
             input.className = "name-input";
             input.value = item.newName;
-            // 入力同期
+            input.placeholder = item.origBase; // 元の名前をヒント表示
+            
+            // 入力をデータに反映
             input.oninput = (e) => {
                 filesData[i].newName = e.target.value;
             };
-            tdNew.appendChild(input);
 
-            tr.appendChild(tdThumb);
+            const extSpan = document.createElement('span');
+            extSpan.className = 'ext-label';
+            extSpan.innerText = item.ext;
+
+            group.appendChild(input);
+            group.appendChild(extSpan);
+            tdNew.appendChild(group);
+
             tr.appendChild(tdOrig);
             tr.appendChild(tdNew);
             fileListBody.appendChild(tr);
         }
-    }
-
-    // サムネイル生成関数 (Canvasを使用)
-    async function generateThumbnail(file) {
-        return new Promise((resolve) => {
-            const url = URL.createObjectURL(file);
-            hiddenVideo.src = url;
-            hiddenVideo.currentTime = 1.0; // 1秒目のフレームを取得
-
-            // 読み込み完了待ち
-            hiddenVideo.onloadeddata = () => {
-                // 少し待ってから描画
-                setTimeout(() => {
-                    hiddenCanvas.width = 160;
-                    hiddenCanvas.height = 90;
-                    ctx.drawImage(hiddenVideo, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
-                    const dataUrl = hiddenCanvas.toDataURL('image/jpeg');
-                    // メモリ解放
-                    URL.revokeObjectURL(url);
-                    resolve(dataUrl);
-                }, 200);
-            };
-            
-            // エラー時はダミー画像
-            hiddenVideo.onerror = () => {
-                resolve("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='45' style='background:%23ccc'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='10'>No Image</text></svg>");
-            };
-        });
     }
 
     // 2. 一括命名機能
@@ -254,35 +222,29 @@
         const inputs = document.querySelectorAll('.name-input');
 
         filesData.forEach((item, index) => {
-            let ext = "";
-            const parts = item.origName.split('.');
-            if(parts.length > 1) ext = "." + parts.pop();
-
             let finalName = "";
 
-            if (prefix === "") {
-                // 接頭辞がない場合、アンダースコアなし
-                finalName = item.origName; // デフォルトは変更なし
-            } else {
-                // 接頭辞がある場合
-                if (type === 'keep') {
-                    // 自由規則（元の名前）
-                    // 例: prefix_元の名前.mp4
-                    // 拡張子を除いた元の名前を取得
-                    const baseOrig = item.origName.replace(ext, "");
-                    finalName = `${prefix}_${baseOrig}${ext}`;
-                } else {
-                    // 連番
-                    // 例: prefix_01.mp4
-                    const num = String(index + 1).padStart(2, '0');
-                    finalName = `${prefix}_${num}${ext}`;
-                }
+            if (type === 'keep') {
+                // 接頭辞 + 元の名前
+                finalName = prefix + item.origBase;
+            } else if (type === 'number') {
+                // 接頭辞 + 連番
+                const num = String(index + 1).padStart(2, '0');
+                finalName = prefix + num;
+            } else if (type === 'prefix_only') {
+                // 接頭辞のみ (後はユーザーが手入力するため)
+                finalName = prefix;
             }
 
             // データ更新
             item.newName = finalName;
+            
             // 画面更新
-            if(inputs[index]) inputs[index].value = finalName;
+            if(inputs[index]) {
+                inputs[index].value = finalName;
+                // 接頭辞のみの場合は、入力しやすくするためフォーカスを当てても良いが、
+                // 数が多いと邪魔になるので値の更新のみとする
+            }
         });
     });
 
@@ -314,12 +276,21 @@
         if (!targetDirHandle) return;
         btnRun.disabled = true;
         const total = filesData.length;
+        let successCount = 0;
 
         for (let i = 0; i < total; i++) {
             const item = filesData[i];
-            let fileName = item.newName.trim();
             
-            // 不正文字の置換
+            // 名前が空欄なら元の名前を使う、あればその名前を使う
+            let nameToUse = item.newName.trim();
+            if (!nameToUse) {
+                nameToUse = item.origBase;
+            }
+            
+            // 拡張子を結合
+            let fileName = nameToUse + item.ext;
+            
+            // 不正文字の置換 (Windows禁止文字など)
             fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
             
             statusMsg.innerText = `保存中 [${i+1}/${total}]: ${fileName} ...`;
@@ -330,16 +301,16 @@
                 const writable = await fileHandle.createWritable();
                 await writable.write(item.file);
                 await writable.close();
+                successCount++;
             } catch (err) {
                 console.error(err);
-                statusMsg.style.color = "red";
-                statusMsg.innerText = `エラー: ${fileName} の保存に失敗`;
+                // エラーが出ても止まらず次へ
             }
         }
 
         statusMsg.style.color = "#28a745";
-        statusMsg.innerText = `完了！ ${total}個のファイルを保存しました！`;
-        alert("完了しました！");
+        statusMsg.innerText = `完了！ ${successCount}個のファイルを保存しました！`;
+        alert("保存が完了しました！");
         btnRun.disabled = false;
     });
 
