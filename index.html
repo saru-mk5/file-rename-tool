@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>動画リネームツール</title>
+<link rel="icon" href="favicon.png" type="image/png">
 
 <style>
     body { font-family: "Helvetica Neue", Arial, sans-serif; background: #fff5f5; color: #333; margin: 0; padding: 20px; }
@@ -97,7 +98,6 @@
                 <option value="keep">＋ 元の名前</option>
             </select>
             <button class="btn-apply" id="btn-batch-apply">適用する</button>
-            <span class="note">※自動で「_」が付きます</span>
         </div>
 
         <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ffcdd2; border-radius: 4px;">
@@ -220,7 +220,7 @@
         const type = batchTypeSelect.value;
         const inputs = document.querySelectorAll('.name-input');
 
-        // ★修正ポイント：入力があり、かつ末尾が「_」でなければ「_」を自動付与
+        // 入力があり、かつ末尾が「_」でなければ「_」を自動付与
         if (prefix && !prefix.endsWith('_')) {
             prefix += '_';
         }
