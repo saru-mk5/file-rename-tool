@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>動画リネームツール</title>
+
 <style>
     body { font-family: "Helvetica Neue", Arial, sans-serif; background: #fff5f5; color: #333; margin: 0; padding: 20px; }
     .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid #ef5350; }
@@ -89,14 +90,14 @@
         
         <div class="batch-area">
             <span style="font-weight:bold; font-size:0.9em; color:#c62828;">一括設定:</span>
-            <input type="text" id="batch-name" placeholder="共通の文字 (例: 渋谷店_)">
+            <input type="text" id="batch-name" placeholder="共通の文字 (例: 渋谷店)">
             <select id="batch-type" style="padding:8px; border-radius:4px; border:1px solid #ccc;">
                 <option value="prefix_only">＋ 自分で入力 (接頭辞のみ入力)</option>
                 <option value="number">＋ 連番 (01, 02...)</option>
                 <option value="keep">＋ 元の名前</option>
             </select>
             <button class="btn-apply" id="btn-batch-apply">適用する</button>
-            <span class="note">※下のリストに一括入力されます</span>
+            <span class="note">※自動で「_」が付きます</span>
         </div>
 
         <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ffcdd2; border-radius: 4px;">
@@ -149,13 +150,12 @@
         // 名前を分解して保存
         for (let i = 0; i < files.length; i++) {
             const f = files[i];
-            // 拡張子とベース名に分離
             const lastDotIdx = f.name.lastIndexOf('.');
             let base = f.name;
             let ext = "";
             if (lastDotIdx > 0) {
                 base = f.name.substring(0, lastDotIdx);
-                ext = f.name.substring(lastDotIdx); // .mp4 など
+                ext = f.name.substring(lastDotIdx); 
             }
 
             filesData.push({
@@ -163,7 +163,7 @@
                 file: f,
                 origBase: base,
                 ext: ext,
-                newName: "" // 初期値は空欄
+                newName: "" 
             });
         }
         
@@ -172,7 +172,7 @@
         checkReady();
     });
 
-    // リスト描画 (サムネイルなし・拡張子分離)
+    // リスト描画
     function renderList() {
         fileListBody.innerHTML = "";
 
@@ -194,9 +194,8 @@
             input.type = "text";
             input.className = "name-input";
             input.value = item.newName;
-            input.placeholder = item.origBase; // 元の名前をヒント表示
+            input.placeholder = item.origBase;
             
-            // 入力をデータに反映
             input.oninput = (e) => {
                 filesData[i].newName = e.target.value;
             };
@@ -217,22 +216,24 @@
 
     // 2. 一括命名機能
     btnBatchApply.addEventListener('click', () => {
-        const prefix = batchNameInput.value.trim();
+        let prefix = batchNameInput.value.trim();
         const type = batchTypeSelect.value;
         const inputs = document.querySelectorAll('.name-input');
+
+        // ★修正ポイント：入力があり、かつ末尾が「_」でなければ「_」を自動付与
+        if (prefix && !prefix.endsWith('_')) {
+            prefix += '_';
+        }
 
         filesData.forEach((item, index) => {
             let finalName = "";
 
             if (type === 'keep') {
-                // 接頭辞 + 元の名前
                 finalName = prefix + item.origBase;
             } else if (type === 'number') {
-                // 接頭辞 + 連番
                 const num = String(index + 1).padStart(2, '0');
                 finalName = prefix + num;
             } else if (type === 'prefix_only') {
-                // 接頭辞のみ (後はユーザーが手入力するため)
                 finalName = prefix;
             }
 
@@ -242,8 +243,6 @@
             // 画面更新
             if(inputs[index]) {
                 inputs[index].value = finalName;
-                // 接頭辞のみの場合は、入力しやすくするためフォーカスを当てても良いが、
-                // 数が多いと邪魔になるので値の更新のみとする
             }
         });
     });
@@ -281,22 +280,17 @@
         for (let i = 0; i < total; i++) {
             const item = filesData[i];
             
-            // 名前が空欄なら元の名前を使う、あればその名前を使う
             let nameToUse = item.newName.trim();
             if (!nameToUse) {
                 nameToUse = item.origBase;
             }
             
-            // 拡張子を結合
             let fileName = nameToUse + item.ext;
-            
-            // 不正文字の置換 (Windows禁止文字など)
             fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
             
             statusMsg.innerText = `保存中 [${i+1}/${total}]: ${fileName} ...`;
 
             try {
-                // 新しいファイルを作成して書き込み
                 const fileHandle = await targetDirHandle.getFileHandle(fileName, { create: true });
                 const writable = await fileHandle.createWritable();
                 await writable.write(item.file);
@@ -304,7 +298,6 @@
                 successCount++;
             } catch (err) {
                 console.error(err);
-                // エラーが出ても止まらず次へ
             }
         }
 
